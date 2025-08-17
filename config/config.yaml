@@ -1,0 +1,10 @@
+paths:
+  raw:    "data/raw/credit.csv"
+  silver: "data/silver/credit.parquet"
+  gold:   "data/gold/credit_agg.parquet"
+
+s3:
+  endpoint: "${S3_ENDPOINT}"
+  region:   "${S3_REGION}"
+  bucket:   "silver"     # 필요하면 raw/gold 등 버킷 분리
+  prefix:   "credit/"    # 업로드 접두어
