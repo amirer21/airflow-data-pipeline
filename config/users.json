@@ -1,0 +1,10 @@
+{
+  "airflow": {
+    "password": "airflow1234!",
+    "roles": ["Admin"]
+  },
+  "hong": {
+    "password": "1234",
+    "roles": ["Admin"]
+  }
+}

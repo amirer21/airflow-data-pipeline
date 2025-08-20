@@ -32,6 +32,7 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.python import get_current_context
 import pandas as pd
+import pendulum
 
 # 선택 의존성 가드: pandera 없어도 동작
 try:
@@ -62,6 +63,23 @@ if HAS_PANDERA:
         "age": pa.Column(int),
         "churned": pa.Column(int),
     })
+
+
+def _ctx_ds():
+    ctx = get_current_context()
+    # 수동 트리거 시 --conf로 넘긴 ds가 있으면 최우선 사용
+    try:
+        conf_ds = (ctx.get("dag_run") or {}).get("conf", {}).get("ds")
+        if conf_ds:
+            return conf_ds
+    except Exception:
+        pass
+    # 그 외 컨텍스트 우선순위 (Airflow 3.x 호환)
+    dt = (ctx.get("logical_date")
+          or ctx.get("data_interval_start")
+          or ctx.get("execution_date")
+          or pendulum.now("UTC"))
+    return dt.strftime("%Y-%m-%d")
 
 def slack_alert(context):
     if not HAS_SLACK:
@@ -98,7 +116,8 @@ with DAG(
         from airflow.providers.amazon.aws.hooks.s3 import S3Hook
         import io
 
-        ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        #ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        ds = _ctx_ds()
         key = f"churn/dt={ds}/churn.csv"
 
         s3 = S3Hook(aws_conn_id=S3_CONN_ID)
@@ -119,7 +138,8 @@ with DAG(
         from airflow.providers.amazon.aws.hooks.s3 import S3Hook
         import io
 
-        ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        #ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        ds = _ctx_ds()
         key = f"churn/dt={ds}/churn.csv"
 
         s3 = S3Hook(aws_conn_id=S3_CONN_ID)
@@ -140,7 +160,8 @@ with DAG(
         from airflow.providers.amazon.aws.hooks.s3 import S3Hook
         import io
 
-        ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        #ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        ds = _ctx_ds()
         raw_key = f"churn/dt={ds}/churn.csv"
         silver_key = f"churn/dt={ds}/churn_clean.csv"
 
@@ -157,7 +178,8 @@ with DAG(
         from airflow.providers.amazon.aws.hooks.s3 import S3Hook
         import io
 
-        ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        #ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        ds = _ctx_ds()
         silver_key = f"churn/dt={ds}/churn_clean.csv"
         gold_key = f"churn/dt={ds}/churn_by_state.csv"
 
@@ -175,7 +197,8 @@ with DAG(
         from airflow.providers.postgres.hooks.postgres import PostgresHook
         import io
 
-        ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        #ds = get_current_context()["logical_date"].strftime("%Y-%m-%d")
+        ds = _ctx_ds()
         gold_key = f"churn/dt={ds}/churn_by_state.csv"
 
         s3 = S3Hook(aws_conn_id=S3_CONN_ID)

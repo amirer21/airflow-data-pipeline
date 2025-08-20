@@ -79,6 +79,11 @@ _PIP_ADDITIONAL_REQUIREMENTS=apache-airflow-providers-amazon apache-airflow-prov
 
 > (예시는 기존 저장소의 `docker-compose.yaml`을 그대로 사용하되, 이미지 태그/헬스체크/포트만 점검)
 
+#### 서비스 목록 확인
+```sh
+docker compose config --services
+```
+
 ### (3) 스택 기동
 
 ```bash
@@ -109,6 +114,42 @@ airflow connections add dw_postgres \
   --conn-port 5432
 airflow connections list
 '
+```
+
+### AirFlow 비밀번호 
+
+#### 비밀번호 확인
+```
+$ docker compose exec airflow-webserver bash -lc '
+python - << "PY"
+import os, json
+p = os.environ.get("AIRFLOW_HOME","/opt/airflow") + "/simple_auth_manager_passwords.json.generated"
+with open(p) as f:
+    d = json.load(f)
+print("username: airflow")
+print("password:", d.get("airflow"))
+PY
+'
+```
+
+#### 비밀번호 재설정
+```
+docker compose exec airflow-webserver bash -lc '
+export NEWPW="1234";
+python - << "PY"
+import os, json
+p = os.environ.get("AIRFLOW_HOME","/opt/airflow") + "/simple_auth_manager_passwords.json.generated"
+with open(p) as f: d = json.load(f)
+d["airflow"] = os.environ["NEWPW"]
+with open(p, "w") as f: json.dump(d, f)
+print("updated:", p)
+PY
+'
+```
+
+#### 적용
+```bash
+docker compose restart airflow-webserver
 ```
 
 > (옵션) Slack 웹훅:
