@@ -187,9 +187,9 @@ with DAG(
 실행:
 
 ```bash
-docker compose exec airflow-webserver airflow dags list | grep hello_celery
-docker compose exec airflow-webserver airflow dags unpause hello_celery
-docker compose exec airflow-webserver airflow dags trigger  hello_celery
+docker compose exec airflow-apiserver airflow dags list | grep hello_celery
+docker compose exec airflow-apiserver airflow dags unpause hello_celery
+docker compose exec airflow-apiserver airflow dags trigger  hello_celery
 ```
 
 UI(Grid/Graph/Log)에서 성공(초록) 확인.
